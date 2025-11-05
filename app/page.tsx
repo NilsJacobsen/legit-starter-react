@@ -57,11 +57,12 @@ function Editor() {
         <Image alt="Legit Logo" src="/logo.svg" width={70} height={40} />
       </Link>
 
-      <h1 className="text-2xl font-semibold mt-8">Legit SDK Starter</h1>
-      <p className="max-w-lg mb-8">
+      <h1 className="text-2xl font-semibold mt-8">Legit React Starter</h1>
+      <p className="max-w-lg">
         This demo shows how to use the <code>@legit-sdk/react</code> package for
         local-first document editing and version control.
       </p>
+      <Link className="mb-8" href="https://github.com/NilsJacobsen/legit-starter-react">{"Go to Github →"}</Link>
 
       {/* Editor */}
       <div className="flex flex-col w-full border border-zinc-300 rounded-lg overflow-hidden">
