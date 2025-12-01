@@ -13,18 +13,18 @@ const INITIAL_TEXT = 'This is a document that you can edit! 🖋️';
 
 function Editor() {
   // ✅ The hook handles reading, writing, and history tracking
-  const { content, setContent, history, getPastState, loading, error } =
-    useLegitFile(FILE_PATH, { initialContent: INITIAL_TEXT });
+  const { data, setData, history, getPastState, loading, error } =
+    useLegitFile(FILE_PATH, { initialData: INITIAL_TEXT });
   const { head } = useLegitContext();
   const [text, setText] = useState('');
   const [checkedOutCommit, setCheckedOutCommit] = useState<string | null>(null);
 
   useEffect(() => {
-    if (content !== null) {
+    if (data !== null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setText(content);
+      setText(data);
     }
-  }, [content]);
+  }, [data]);
 
   // Checkout a commit by loading its content from history
   const handleCheckout = async (oid: string) => {
@@ -35,7 +35,7 @@ function Editor() {
 
   // Save changes → triggers legit commit under the hood
   const handleSave = async () => {
-    await setContent(text);
+    await setData(text);
     setCheckedOutCommit(null); // Clear checkout after save
   };
 
@@ -43,7 +43,7 @@ function Editor() {
   // 1. Text hasn't changed from content (no changes to save)
   // 2. A commit is checked out that's not the current HEAD
   const isSaveDisabled =
-    text === content ||
+    text === data ||
     (checkedOutCommit !== null && checkedOutCommit !== head);
 
   if (loading)
