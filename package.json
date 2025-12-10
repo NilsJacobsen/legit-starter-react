@@ -1,7 +1,38 @@
 {
-  "name": "cra",
+  "name": "@legit-sdk/legit-react-starter",
   "version": "0.1.0",
-  "private": true,
+  "description": "A starter template demonstrating how to use @legit-sdk/react for local-first document editing and version control in a Next.js application",
+  "bin": {
+    "legit-react-starter": ".bin/cli/js"
+  },
+  "files": [
+    "app",
+    "public",
+    ".bin",
+    "*.ts",
+    "*.tsx",
+    "*.mjs",
+    "*.json",
+    "*.css",
+    ".gitignore",
+    "README.md"
+  ],
+  "keywords": [
+    "legit",
+    "legit-sdk",
+    "react",
+    "nextjs",
+    "starter",
+    "template",
+    "version-control",
+    "local-first"
+  ],
+  "author": "Legit Control",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NilsJacobsen/legit-starter-react.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

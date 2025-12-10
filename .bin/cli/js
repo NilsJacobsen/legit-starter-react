@@ -1,0 +1,167 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+// Get project name from command line arguments
+const projectName = process.argv[2];
+
+if (!projectName) {
+  console.error('Error: Project name is required');
+  console.log('Usage: npx @legit-sdk/legit-react-starter <project-name>');
+  process.exit(1);
+}
+
+// Validate project name (npm package name rules)
+const npmNameRegex = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+if (!npmNameRegex.test(projectName)) {
+  console.error('Error: Invalid project name');
+  console.log('Project name must be a valid npm package name (lowercase, no spaces, etc.)');
+  process.exit(1);
+}
+
+// Find template directory (package root)
+function findTemplateDir() {
+  // When installed via npx, __dirname points to .bin/cli
+  let currentDir = __dirname;
+  
+  // Go up to find package.json
+  while (currentDir !== path.dirname(currentDir)) {
+    const packageJsonPath = path.join(currentDir, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        if (pkg.name === '@legit-sdk/legit-react-starter') {
+          return currentDir;
+        }
+      } catch (e) {
+        // Continue searching
+      }
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  
+  // Fallback: assume template is two levels up from .bin/cli
+  return path.resolve(__dirname, '../..');
+}
+
+const templateDir = findTemplateDir();
+const targetDir = path.resolve(process.cwd(), projectName);
+
+// Check if target directory already exists
+if (fs.existsSync(targetDir)) {
+  console.error(`Error: Directory "${projectName}" already exists`);
+  process.exit(1);
+}
+
+console.log(`Creating new project "${projectName}"...`);
+
+// Create target directory
+fs.mkdirSync(targetDir, { recursive: true });
+
+// Files and directories to copy
+const filesToCopy = [
+  'app',
+  'public',
+  'next.config.ts',
+  'tsconfig.json',
+  'eslint.config.mjs',
+  'postcss.config.mjs',
+  '.gitignore',
+  'README.md'
+];
+
+// Copy files and directories
+function copyRecursive(src, dest) {
+  const stat = fs.statSync(src);
+  
+  if (stat.isDirectory()) {
+    fs.mkdirSync(dest, { recursive: true });
+    const entries = fs.readdirSync(src);
+    for (const entry of entries) {
+      // Skip node_modules and .next
+      if (entry === 'node_modules' || entry === '.next' || entry === '.git') {
+        continue;
+      }
+      copyRecursive(path.join(src, entry), path.join(dest, entry));
+    }
+  } else {
+    fs.copyFileSync(src, dest);
+  }
+}
+
+for (const item of filesToCopy) {
+  const srcPath = path.join(templateDir, item);
+  const destPath = path.join(targetDir, item);
+  
+  if (fs.existsSync(srcPath)) {
+    copyRecursive(srcPath, destPath);
+  }
+}
+
+// Read and modify package.json
+const packageJsonPath = path.join(templateDir, 'package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
+// Remove bin field and update name
+delete packageJson.bin;
+packageJson.name = projectName;
+packageJson.private = true;
+delete packageJson.files;
+delete packageJson.keywords;
+delete packageJson.repository;
+
+// Write new package.json
+const newPackageJsonPath = path.join(targetDir, 'package.json');
+fs.writeFileSync(newPackageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+
+// Read and modify tsconfig.json (remove any local path mappings if needed)
+const tsconfigPath = path.join(targetDir, 'tsconfig.json');
+if (fs.existsSync(tsconfigPath)) {
+  // tsconfig.json allows comments, but our file doesn't have any
+  // Still, we'll use a proper JSON parser
+  const tsconfigContent = fs.readFileSync(tsconfigPath, 'utf8');
+  const tsconfig = JSON.parse(tsconfigContent);
+  
+  // Keep paths as-is since they're standard
+  fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + '\n');
+}
+
+console.log('Installing dependencies...');
+
+// Detect package manager
+let packageManager = 'npm';
+if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml')) || 
+    fs.existsSync(path.join(templateDir, 'pnpm-lock.yaml'))) {
+  packageManager = 'pnpm';
+} else if (fs.existsSync(path.join(process.cwd(), 'yarn.lock')) || 
+           fs.existsSync(path.join(templateDir, 'yarn.lock'))) {
+  packageManager = 'yarn';
+}
+
+// Install dependencies
+try {
+  process.chdir(targetDir);
+  execSync(`${packageManager} install`, { stdio: 'inherit' });
+} catch (error) {
+  console.error('Error installing dependencies:', error.message);
+  process.exit(1);
+}
+
+console.log('\n✅ Project created successfully!');
+console.log(`\nStarting development server...\n`);
+
+// Start dev server
+// npm requires "run" for scripts, pnpm and yarn don't
+const devCommand = packageManager === 'npm' ? 'npm run dev' : `${packageManager} dev`;
+try {
+  execSync(devCommand, { stdio: 'inherit', cwd: targetDir });
+} catch (error) {
+  // User might have stopped the server with Ctrl+C, which is fine
+  if (error.signal !== 'SIGINT') {
+    console.error('Error starting dev server:', error.message);
+    process.exit(1);
+  }
+}
+

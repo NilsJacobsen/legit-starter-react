@@ -2,6 +2,16 @@
 
 A starter template demonstrating how to use `@legit-sdk/react` for local-first document editing and version control in a Next.js application.
 
+## Quick Start
+
+Create a new project using npx:
+
+```bash
+npx @legit-sdk/legit-react-starter my-app
+```
+
+The development server will start automatically.
+
 ## Features
 
 - ✅ **Auto-initialization**: Files are automatically created with initial content if they don't exist
